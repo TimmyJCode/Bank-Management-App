@@ -39,7 +39,7 @@ class PasswordService:
     def validatePassword(Password: str) -> None:
         # Validate that the passed password is a non-empty string
         if not isinstance(Password, str):
-            raise InvalidPasswordError("Password must be a string")
+            raise TypeError("Password must be a string")
         # Check length
         if len(Password) < 8:
             raise InvalidPasswordError("Password must be at least 8 characters long")

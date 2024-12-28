@@ -17,27 +17,13 @@ from errors import *
 class User:
     # The constructor for the user class takes in the user's ID, raw password, and email
     def __init__(self, userID: str, rawPassword: str, firstName: str, lastName: str, DOB: str, email: str, role: str):
-        # Check that the passed values are of the correct type
-        if not isinstance(userID, str):
-            raise TypeError("User ID must be a string")
-        if not isinstance(role, str):
-            raise TypeError("Role must be a string")
-        # Check that the passed values are not empty
-        if not userID.strip():
-            raise ValueError("User ID cannot be empty") 
-        if not role.strip():
-            raise ValueError("Role cannot be empty")
-        # Check that the role is valid
-        if not isValidRole(role):
-            raise ValueError("Invalid role")
-
-        self._userID: str = userID 
+        self._userID: str = self._validateUserID(userID) 
         self._hashedPassword: str = self._hashPassword(rawPassword)
-        self._email: str = email # Uses setter to check for valid email
-        self._role: str = role 
-        self._firstName: str = self._validateName(firstName) # Uses setter to check for valid first name
-        self._lastName: str = self._validateName(lastName)  # Uses setter to check for valid last name
-        self._DOB: date  = self._validateDOB(DOB) # Uses setter to check for valid DOB
+        self._email: str = self._validateEmail(email) 
+        self._role: str = self._validateRole(role) 
+        self._firstName: str = self._validateName(firstName) 
+        self._lastName: str = self._validateName(lastName)  
+        self._DOB: date  = self._validateDOB(DOB) 
 
     # Getter for the user's userID
     @property
@@ -66,11 +52,8 @@ class User:
         return self._email
     @email.setter
     def email(self, newEmail: str):
-        if not isinstance(newEmail, str):
-            raise TypeError("Email must be a string")
-        if not newEmail.strip():
-            raise ValueError("Email cannot be empty")
-        self._email = newEmail
+        email = self._validateEmail(newEmail) 
+        self._email = email
     
     # Getter for the user's date of birth
     @property
@@ -81,7 +64,14 @@ class User:
     @property
     def role(self) -> str:
         return self._role
-    
+
+    # Validates the input userID, ensuring it is a non-empty string
+    def _validateUserID(self, userID: str) -> str:
+        if not isinstance(userID, str):
+            raise TypeError("User ID must be a string")
+        if not userID.strip():
+            raise ValueError("User ID cannot be empty")
+        return userID 
     # Uses the PasswordService class to validate and hash the raw password- the hashed password is
     # returned as a hex string
     def _hashPassword(self, rawPassword: str) -> str:
@@ -94,6 +84,7 @@ class User:
         if not self.checkPassword(oldRawPassword):
             raise InvalidPasswordError("Incorrect password")
         # Validate and hash the new password
+        PasswordService.validatePassword(newRawPassword)
         newHashedPassword = self._hashPassword(newRawPassword)
         self._hashedPassword = newHashedPassword
 
@@ -141,3 +132,31 @@ class User:
           return emailInfo.normalized  
         except EmailNotValidError as e:
             raise ValueError(f"Invalid email addresss: {e}")
+        
+    # Validates the passed role, ensuring it is a string in the list of valid roles
+    def _validateRole(self, role: str) -> str:
+        if not isinstance(role, str):
+            raise TypeError("Role must be a string")
+        if not role.strip():
+            raise ValueError("Role cannot be empty")
+        if not isValidRole(role):
+            raise ValueError("Invalid role")
+        return role    
+   
+    # Returns a string representation of the user, including their ID, name, email, role, and date of birth
+    def __str__(self) -> str:
+        return f"User ID: {self._userID}\nName: {self._firstName} {self._lastName}\nEmail: {self._email}\nRole: {self._role}\nDOB: {self._DOB.strftime("%m/%d/%Y")}"
+    
+# The customer class is a derived class of the user class, containing
+# additional information specific to a customer of the bank management system
+# and functionality for managing their accounts
+class Customer(User):
+    # The constructor for the customer class takes in the user's ID, raw password, email, and
+    # additional information specific to a customer, as well as setting up the customer's dictionary
+    # of accounts
+    def __init__(self, userID: str, rawPassword: str, firstName: str, lastName: str, DOB: str, email: str):
+        super().__init__(userID, rawPassword, firstName, lastName, DOB, email, "customer")
+        # The customer class also includes a dictionary of the customer's accounts, indexed by account ID
+        self._accounts: dict[str, Account] = {}
+    
+    
