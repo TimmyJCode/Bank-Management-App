@@ -10,6 +10,7 @@ from datetime import datetime, date
 from email_validator import validate_email, EmailNotValidError
 from utilities import *
 from errors import *
+from accounts import Account
 
 
 # The user class is the base class for the customer and admin classes, containing the basic information
