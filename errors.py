@@ -7,11 +7,29 @@
 
 class InvalidPasswordError(ValueError):
     def __init__(self, message: str):
-        self.message = message
-        super().__init__(self.message)
+        super().__init__(message)
 
 
 class InvalidDOBError(ValueError):
     def __init__(self, message: str):
-        self.message = message
-        super().__init__(self.message)
+        super().__init__(message)
+
+class InvalidAccountIDError(ValueError):
+    def __init__(self, message: str):
+        super().__init__(message)
+
+class InvalidInitialDepositError(ValueError):
+    def __init__(self, message: str):
+        super().__init__(message)
+
+class InvalidTransactionIDError(ValueError):
+    def __init__(self, message: str):
+        super().__init__(message)
+
+class InvalidTransactionAmountError(ValueError):
+    def __init__(self, message: str):
+        super().__init__(message)
+
+class InvalidTransactionTypeError(ValueError):
+    def __init__(self, message: str):
+        super().__init__(message)

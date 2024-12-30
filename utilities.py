@@ -11,6 +11,10 @@ from errors import *
 
 # List of valid user roles, for checks in the user constructor
 VALID_ROLES: list[str] = ["customer", "admin"]
+# List of valid account statuses, for checks in the account status setter
+VALID_STATUSES: list[str] = ["Active", "Frozen", "Closed"]
+# List of valid transaction types, for checks in the transaction type setter
+VALID_TRANSACTION_TYPES: list[str] = ["Deposit", "Withdrawal", "Intra-Transfer", "External-Transfer"]
 
 # Determines if the passed role is in the list of valid roles
 def isValidRole(role: str) -> bool:
@@ -58,4 +62,3 @@ class PasswordService:
         # Check for spaces
         if any(char.isspace() for char in Password):
             raise InvalidPasswordError("Password cannot contain spaces")
-        
