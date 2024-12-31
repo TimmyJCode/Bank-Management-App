@@ -269,10 +269,9 @@ class ExternalTransfer(Transaction):
     
     # Ensures that the destination bank is a non-empty string
     def _validateDestinationBank(self, destinationBank: str) -> str:
-        if not isinstance(destinationBank, str):
-            raise TransferError("Transfer Error: Destination Bank must be a string")
-        if not destinationBank:
-            raise TransferError("Transfer Error: Destination Bank cannot be empty")
+        # Ensure the destinationBank is a non-empty string
+        try: destinationBank = validateString(destinationBank, "Destination Bank", 50, False)
+        except InputError as e: raise TransferError(f"Transfer Error: {e}")
         return destinationBank
     
     def __str__(self):
@@ -338,12 +337,12 @@ class Account:
         if newStatus not in VALID_STATUSES:
             raise ValueError("Status must be 'Active', 'Frozen', or 'Closed'")
         self._status = newStatus
-    
+ 
     # Validates that the account ID is a non empty string
     def _validateAccountID(self, accountID: str) -> str:
         # Check that the accountID is a non-empty alphanumeric string
         try: accountID = validateAlnumString(accountID, "Account ID", 50, False)
-        except InputError as e: raise InvalidAccountIDError(f"Account ID Error: {e}")
+        except InputError as e: raise AccountError(f"Account ID Error: {e}")
         return accountID
 
     # Validates that the intial balance allocated to an account is a non-negative float 
@@ -353,8 +352,45 @@ class Account:
         except InputError as e: raise DepositError(f"Initial Deposit Error: {e}")
         return deposit
 
+    # The makeDeposit method is used to add funds to the account balance
+    # The method takes in the user ID of the user making the deposit, the amount of the deposit, the deposit method,
+    # the fee charged for the deposit (default is 0.00), the origin of the deposit (default is None), and a description
+    # of the deposit (default is None) 
+    # The method creates a new deposit record, adds the deposit to the account's transaction list, and updates the account balance
+    def makeDeposit(self, userID: str, amount: float, depositMethod: str, fee: float = 0.00, origin: str = None, description: str = None) -> None:
+        # Ensure the account is active
+        if not self.isActive():
+            raise AccountError("Account Error: Account is not active")
+        # Create a new deposit record
+        deposit = Deposit(userID, self._accountID, amount, depositMethod, fee, origin, description)
+        # Add the deposit to the account's transaction list
+        self._transactions.append(deposit)
+        # Update the account balance
+        self._balance += amount
+    
+    # The makeWithdrawal method is used to remove funds from the account balance
+    # The method takes in the user ID of the user making the withdrawal, the amount of the withdrawal, the withdrawal method,
+    # the fee charged for the withdrawal (default is 0.00), the origin of the withdrawal (default is None), and a description
+    # of the withdrawal (default is None)
+    # The method creates a new withdrawal record, adds the withdrawal to the account's transaction list, and updates the account balance
+    def makeWithdrawal(self, userID: str, amount: float, withdrawalMethod: str, fee: float = 0.00, origin: str = None, description: str = None) -> None:
+        # Ensure the account is active
+        if not self.isActive():
+            raise AccountError("Account Error: Account is not active")
+        # Ensure the withdrawal amount is less than the account balance
+        if amount > self._balance:
+            raise WithdrawalError("Withdrawal Error: Withdrawal amount exceeds account balance")
+        # Create a new withdrawal record
+        withdrawal = Withdrawal(userID, self._accountID, amount, withdrawalMethod, fee, origin, description)
+        # Add the withdrawal to the account's transaction list
+        self._transactions.append(withdrawal)
+        # Update the account balance
+        self._balance -= amount
+
+    def isActive(self) -> bool:
+        return self._status == "Active"
+
     # Returns a string representation of the account object 
     def __str__(self) -> str:
         return f"Account ID: {self.accountID}\nUser ID: {self.userID}\nBalance: {self.balance}\nDate Created: {self.dateCreated}\nStatus: {self.status}\nTransactions: {self.transactions}"
     
- 

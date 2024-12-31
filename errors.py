@@ -13,22 +13,6 @@ class InvalidDOBError(ValueError):
     def __init__(self, message: str):
         super().__init__(message)
 
-class InvalidAccountIDError(ValueError):
-    def __init__(self, message: str):
-        super().__init__(message)
-
-class InvalidUserIDError(ValueError):
-    def __init__(self, message: str):
-        super().__init__(message)
-
-class InvalidTransactionIDError(ValueError):
-    def __init__(self, message: str):
-        super().__init__(message)
-
-class InvalidTransactionAmountError(ValueError):
-    def __init__(self, message: str):
-        super().__init__(message)
-
 class InvalidTransactionTypeError(ValueError):
     def __init__(self, message: str):
         super().__init__(message)
@@ -50,6 +34,10 @@ class TransferError(ValueError):
         super().__init__(message)
 
 class InputError(ValueError):
+    def __init__(self, message: str):
+        super().__init__(message)
+
+class AccountError(ValueError):
     def __init__(self, message: str):
         super().__init__(message)
 
