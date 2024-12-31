@@ -73,6 +73,7 @@ class User:
         if not userID.strip():
             raise ValueError("User ID cannot be empty")
         return userID 
+  
     # Uses the PasswordService class to validate and hash the raw password- the hashed password is
     # returned as a hex string
     def _hashPassword(self, rawPassword: str) -> str:
@@ -81,19 +82,19 @@ class User:
         return PasswordService.hashPassword(rawPassword)
     
     # Allows the user to change their password, first checking the old password
-    def changePassword(self, oldRawPassword: str, newRawPassword: str):
+    def changePassword(self, oldRawPassword: str, newRawPassword: str) -> None:
+        # Check the user's previous password
         if not self.checkPassword(oldRawPassword):
             raise InvalidPasswordError("Incorrect password")
-        # Validate and hash the new password
+        # Validate and hash the new password, set as the user's stored password
         PasswordService.validatePassword(newRawPassword)
-        newHashedPassword = self._hashPassword(newRawPassword)
-        self._hashedPassword = newHashedPassword
+        self._hashedPassword = self._hashPassword(newRawPassword)
 
-    # Checks if the passed raw password matches the hashed password
+    # Checks if the passed raw password matches the hashed password using the PasswordService class
     def checkPassword(self, rawPassword: str) -> bool:
         return PasswordService.checkPassword(rawPassword, self._hashedPassword)
     
-    # Validates the passed date of birth, ensuring it is a string in the format MM/DD/YYYY and that the
+    # Validates the passed date of birth, ensuring it is a non-empty string in the format MM/DD/YYYY and that the
     # user is at least 18 years old
     def _validateDOB(self, DOB: str) -> date:
         # Ensure the passed date of birth is a string
@@ -111,36 +112,27 @@ class User:
             raise InvalidDOBError("User must be at least 18 years old")
         return parsedDOB
     
-    # Validates the passed name, ensuring it is a string containing only letters
+    # Validates the passed name, ensuring it is a non-empty string containing only letters
     def _validateName(self, name: str) -> str:
-        if not isinstance(name, str):
-            raise TypeError("Name must be a string")
-        if not name.strip():
-            raise ValueError("Name cannot be empty")
-        if not name.isalpha():
-            raise ValueError("Name must contain only letters")
+        # Validate the name is a non-empty alphanumeric string
+        try: name = validateAlnumString(name, "Name", 50)
+        except InputError as e: raise ValueError(f"Invalid Name: {e}")
         return name
 
-    # Validates the passed email, ensuring it is a string in a valid email format
+    # Validates the passed email, ensuring it is a non-empty string in a valid email format
     # using the email_validator library
     def _validateEmail(self, email: str) -> str:
-        if not isinstance(email, str):
-            raise TypeError("Email must be a string")
-        if not email.strip():
-            raise ValueError("Email cannot be empty")
+        # Validate the the email is a non-empty string
+        try: email = validateString(email, "Email", 100)
+        except InputError as e: raise ValueError(f"Invalid email address: {e}")
         try:
           emailInfo = validate_email(email, check_deliverability=False)
           return emailInfo.normalized  
-        except EmailNotValidError as e:
-            raise ValueError(f"Invalid email addresss: {e}")
+        except EmailNotValidError as e: raise ValueError(f"Invalid email addresss: {e}")
         
     # Validates the passed role, ensuring it is a string in the list of valid roles
     def _validateRole(self, role: str) -> str:
-        if not isinstance(role, str):
-            raise TypeError("Role must be a string")
-        if not role.strip():
-            raise ValueError("Role cannot be empty")
-        if not isValidRole(role):
+        if role not in VALID_ROLES:
             raise ValueError("Invalid role")
         return role    
    

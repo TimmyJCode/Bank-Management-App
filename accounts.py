@@ -91,11 +91,11 @@ class Transaction:
     # is missing
     def _validateTransactionMetadata(self) -> None:
         if not self._userID:
-            raise TransactionError("User ID is required to generate a transaction ID")
+            raise TransactionError("Transaction Error: User ID is required to generate a transaction ID")
         if not self._transactionType:
-            raise TransactionError("Transaction type is required to generate a transaction ID")
+            raise TransactionError("Transaction Error: Transaction type is required to generate a transaction ID")
         if not self._timeStamp:
-            raise TransactionError("Time stamp is required to generate a transaction ID")
+            raise TransactionError("Transaction Error: Time stamp is required to generate a transaction ID")
 
     # Generates a unique transaction ID for the transaction object- the transaction ID is a string
     # in the format userID-transactionType-timeStamp.isoformat(), hashed using bcrpyt 
@@ -108,46 +108,56 @@ class Transaction:
         return bcrypt.hash(metaData.encode())
 
     # Validates that the amount of the transaction is a floating point number- throws
-    # a value error exception if the amount is not a float
+    # a transaction error exception if the amount is not a float
     def _validateAmount(self, amount: float) -> float:
         if not isinstance(amount, float):
-            raise InvalidTransactionAmountError("Amount must be a floating point number")
+            raise TransactionError("Transaction Error: Amount must be a floating point number")
         return amount
 
     # Ensures that the transaction type is a non-empty string and is a valid transaction type- throws 
     # an invalid transaction type error if the transaction type is not a string, is empty, or is not a valid
     # transaction type
     def _validateTransactionType(self, transactionType: str) -> str:
-        if not isinstance(transactionType, str):
-            raise InvalidTransactionTypeError("Transaction type must be a string")
-        if not transactionType:
-            raise InvalidTransactionTypeError("Transaction type cannot be empty")
+        # Validate the transactionType string
+        try: transactionType = validateString(transactionType, "Transaction Type", 50, False)
+        except InputError as e: raise TransactionError(f"Transaction Error: {e}")
         if transactionType not in VALID_TRANSACTION_TYPES:
-            raise InvalidTransactionTypeError("Invalid Transaction Type")
+            raise TransactionError("Transaction Error: Invalid Transaction Type")
         return transactionType
     
-    # Ensures that the fee is a non-negative floating point number- if the fee is negative, throws a DepositError
+    # Ensures that the fee is a non-negative floating point number- if the fee is negative, throws a TransactionError
     def _validateFee(self, fee: float) -> float:
         if not isinstance(fee, float):
-            raise TransactionError("Fee must be a floating point number")
+            raise TransactionError("Transaction Erorr: Fee must be a floating point number")
         if fee < 0:
-            raise TransactionError("Fee must be greater than or equal to 0")
+            raise TransactionError("Transaction Error: Fee must be greater than or equal to 0")
         return fee
 
     # Ensures that the origin is a non-empty string- if the origin is empty or non alpha-numeric,
-    # throws a DepositError
+    # throws a TransactionError
     def _validateOrigin(self, origin: str) -> str:
-        if not isinstance(origin, str) and origin is not None:
-            raise TransactionError("Origin must be a string")
+        try: origin = validateString(origin, "Origin", 50, True)
+        except InputError as e: raise TransactionError(f"Transaction Error: {e}")
         return origin
  
     # Ensures that the description is a non-empty string- if the description is empty or non alpha-numeric,
     # throws a TransactionError
     def _validateDescription(self, description: str) -> str:
-        if not isinstance(description, str) and description is not None:
-            raise TransactionError("Description must be a string")
+        try: description = validateString(description, "Description", 100, True)
+        except InputError as e: raise TransactionError(f"Transaction Error: {e}")
         return description
     
+    # Ensures that the destination account ID is a non-empty string, is alphanumeric, and is not the same as the source account ID
+    # For use in transfer transactions
+    def _validateDestinationAccountID(self, destinationAccountID: str) -> str:
+        # Validate that destinationAccountID is a non-empty alphanumeric string
+        try: destinationAccountID = validateAlnumString(destinationAccountID, "Destination Account ID", 50, False)
+        except InputError as e: raise TransferError(f"Transfer Error: {e}")
+        # Ensure destinationAccountID is not the same as the source account ID
+        if destinationAccountID == self._accountID:
+            raise TransferError("Transfer Error: Destination Account ID cannot be the same as the source account ID")
+        return destinationAccountID
+
     # Returns a string representation of the transaction object
     def __str__(self):
         return f"Transaction ID: {self._transactionID}\nUser ID: {self._userID}\nAccount ID: {self._accountID}\nAmount: {self.amount}\nTransaction Type: {self.transactionType}"
@@ -175,9 +185,98 @@ class Deposit(Transaction):
     # If deposit method is invalid, throws DepositError exception
     def _validateDepositMethod(self, depositMethod: str) -> str:
         if depositMethod not in VALID_DEPOSIT_METHODS:
-            raise DepositError("Invalid deposit method")
+            raise DepositError("Deposit Error: Invalid deposit method")
         return depositMethod
+
+    # Returns a string representation of the deposit object
+    def __str__(self):
+        return super().__str__() + f"\nDeposit Method: {self.depositMethod}"
+
+# The withdrawal class is a subclass of the transaction class, and is used to represent a withdrawal transaction in
+# the bank management system
+# Each withdrawal has a transaction ID, the user ID of the user that made the withdrawal, the account ID of the account
+# that the withdrawal was made on, the amount of the withdrawal, the type of transaction (withdrawal), and the date and time of the withdrawal
+class Withdrawal(Transaction):
+    # The constructor for the withdrawal class takes in the user ID, account ID, and amount of the withdrawal, as well as optional
+    # information like fee (defaults to 0.00), origin, and description, and initializes the withdrawal with the given values
+    # after validating the passed data
+    def __init__(self, userID: str, accountID: str, amount: float, withdrawalMethod: str, fee: float = 0.00,
+                 transactionType: str = "Withdrawal", origin: str = None, description: str = None):
+        # Call the Transaction class constructor
+        super().__init__(userID, accountID, amount, transactionType, description, origin, fee)
+        # Withdrawal Method: The method used to make the withdrawal
+        self._withdrawalMethod: str = self._validateWithdrawalMethod(withdrawalMethod)
     
+    # Getter for the withdrawal method
+    @property
+    def withdrawalMethod(self) -> str:
+        return self._withdrawalMethod
+
+    # Ensures that the withdrawal method is a valid withdrawal method as defined in the utilities.py file
+    # If withdrawal method is invalid, throws WithdrawalError exception
+    def _validateWithdrawalMethod(self, withdrawalMethod: str) -> str:
+        if withdrawalMethod not in VALID_WITHDRAWAL_METHODS:
+            raise WithdrawalError("Withdrawal Error: Invalid withdrawal method")
+        return withdrawalMethod
+    
+    # Returns a string representation of the withdrawal object
+    def __str__(self):
+        return super().__str__() + f"\nWithdrawal Method: {self.withdrawalMethod}"
+
+# The transfer class is a subclass of the transaction class, and is used to represent a transfer transaction between two accounts in the bank
+# management system
+# Each transfer has a transaction ID, the user ID of the user that made the transfer, the account ID of the account that the transfer
+# was made from, the account ID of the account that the transfer was made to (destination), the amount of the transfer, 
+# the type of transaction (which must be "Intra-Transfer" or "External-Transfer"), the date and time of the transfer, and optional
+# information like fee, origin, and description
+class InternalTransfer(Transaction):
+    def __init__(self, userID: str, accountID: str, destinationAccountID: str, amount: float, transactionType: str = "Intra-Transfer",
+                 fee: float = 0.00, origin: str = None, description: str = None):
+        # Call the Transaction class constructor
+        super().__init__(userID, accountID, amount, transactionType, description, origin, fee)
+        # Destination Account ID: The account ID of the account that the transfer is being made to
+        self._destinationAccountID: str = self._validateDestinationAccountID(destinationAccountID)
+    
+    # Getter for the destination account ID
+    @property
+    def destinationAccountID(self) -> str:
+        return self._destinationAccountID
+
+    def __str__(self):
+        return super().str() + f"\nDestination Account ID: {self._destinationAccountID}"
+
+class ExternalTransfer(Transaction):
+    def __init__(self, userID: str, accountID: str, destinationAccountID: str, destinationRoutingNumber: str, destinationBank:str, 
+                 amount: float, transactionType: str = "External-Transfer", fee: float = 0.00, origin: str = None, description: str = None):
+        # Call the Transaction class constructor
+        super().__init__(userID, accountID, amount, transactionType, description, origin, fee)
+        # Destination Account ID: The account ID of the account that the transfer is being made to
+        self._destinationAccountID: str = self._validateDestinationAccountID(destinationAccountID)
+        # Destination Routing Number: The routing number of the destination bank
+        self._destinationRoutingNumber: str = self._validateDestinationRoutingNumber(destinationRoutingNumber)
+        # Destination Bank: The name of the destination bank
+        self._destinationBank: str = self._validateDestinationBank(destinationBank)
+
+    # Ensures that the destination routing number is a 9 digit numeric string 
+    def _validateDestinationRoutingNumber(self, destinationRoutingNumber: str) -> str:
+        if not isinstance(destinationRoutingNumber, str):
+            raise TransferError("Transfer Error: Destination Routing Number must be a string")
+        if len(destinationRoutingNumber) != 9:
+            raise TransferError("Transfer Error: Destination Routing Number must be 9 digits")
+        if not destinationRoutingNumber.isnumeric():
+            raise TransferError("Transfer Error: Destination Routing Number must be numeric")
+        return destinationRoutingNumber
+    
+    # Ensures that the destination bank is a non-empty string
+    def _validateDestinationBank(self, destinationBank: str) -> str:
+        if not isinstance(destinationBank, str):
+            raise TransferError("Transfer Error: Destination Bank must be a string")
+        if not destinationBank:
+            raise TransferError("Transfer Error: Destination Bank cannot be empty")
+        return destinationBank
+    
+    def __str__(self):
+        return super().__str__() + f"\nDestination Account ID: {self._destinationAccountID}\nDestination Routing Number: {self._destinationRoutingNumber}\nDestination Bank: {self._destinationBank}"
     
    
 
@@ -232,7 +331,6 @@ class Account:
     @property
     def status(self) -> str:
         return self._status
-    
     # Setter for the status- ensures the status is a valid account status
     @status.setter
     def status(self, newStatus: str):
@@ -243,25 +341,16 @@ class Account:
     
     # Validates that the account ID is a non empty string
     def _validateAccountID(self, accountID: str) -> str:
-        # Check that the account ID is a string
-        if not isinstance(accountID, str):
-            raise InvalidAccountIDError("Account ID must be a string")
-        # Check that the account ID is not empty
-        if not accountID:
-            raise InvalidAccountIDError("Account ID cannot be empty")
-        # Check that the account ID is alphanumeric
-        if not accountID.isalnum():
-            raise InvalidAccountIDError("Account ID must be alphanumeric")
+        # Check that the accountID is a non-empty alphanumeric string
+        try: accountID = validateAlnumString(accountID, "Account ID", 50, False)
+        except InputError as e: raise InvalidAccountIDError(f"Account ID Error: {e}")
         return accountID
 
     # Validates that the intial balance allocated to an account is a non-negative float 
     def _validateInitialDeposit(self, deposit: float) -> float:
-        # Check that the balance is a float
-        if not isinstance(deposit, float):
-            raise InvalidInitialDepositError("Initial deposit must be a floating point number")
-        # Check that the deposit is greater than or equal to 0
-        if deposit < 0:
-            raise InvalidInitialDepositError("Initial deposit must be greater than or equal to 0")
+        # Check that the deposit is a positive float
+        try: deposit = validatePositiveFloat(deposit, "Initial Deposit")
+        except InputError as e: raise DepositError(f"Initial Deposit Error: {e}")
         return deposit
 
     # Returns a string representation of the account object 

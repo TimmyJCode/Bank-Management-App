@@ -17,10 +17,6 @@ class InvalidAccountIDError(ValueError):
     def __init__(self, message: str):
         super().__init__(message)
 
-class InvalidInitialDepositError(ValueError):
-    def __init__(self, message: str):
-        super().__init__(message)
-
 class InvalidUserIDError(ValueError):
     def __init__(self, message: str):
         super().__init__(message)
@@ -44,3 +40,16 @@ class TransactionError(ValueError):
 class DepositError(ValueError):
     def __init__(self, message: str):
         super().__init__(message)
+
+class WithdrawalError(ValueError):
+    def __init__(self, message: str):
+        super().__init__(message)
+
+class TransferError(ValueError):
+    def __init__(self, message: str):
+        super().__init__(message)
+
+class InputError(ValueError):
+    def __init__(self, message: str):
+        super().__init__(message)
+

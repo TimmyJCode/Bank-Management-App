@@ -17,10 +17,57 @@ VALID_STATUSES: list[str] = ["Active", "Frozen", "Closed"]
 VALID_TRANSACTION_TYPES: list[str] = ["Deposit", "Withdrawal", "Intra-Transfer", "External-Transfer"]
 # List of valid deposit methods
 VALID_DEPOSIT_METHODS: list[str] = ["Cash", "Check", "Wire", "Transfer", "Direct-Deposit", "Mobile-Deposit"]
+# List of valid withdrawal methods
+VALID_WITHDRAWAL_METHODS: list[str] = ["Cash", "Check", "Wire", "Transfer"]
 
-# Determines if the passed role is in the list of valid roles
-def isValidRole(role: str) -> bool:
-    return role in VALID_ROLES
+
+# Determines if the passed string (such as a description or origin) is a string of less than
+# maxLength characters- if the optional flag is set to true, the string can be empty
+def validateString(value: str, valueName: str, maxLength: int, optional: bool = False) -> str:
+    # Check if the passed value is a string
+    if not isinstance(value, str):
+        raise InputError(f"{valueName} must be a string")
+    # Check if the value is empty
+    if not value:
+        if optional:
+            return value
+        else:
+            raise InputError(f"{valueName} cannot be empty")
+    # Check if the value is too long
+    elif len(value) > maxLength:
+        raise InputError(f"{valueName} must be less than {maxLength} characters long")
+    return value
+
+# Determines if the passed string is a non-empty string of less than maxLength characters (if optional is set to true)
+# If the string fails validation, an InputError is raised
+def validateAlnumString(value: str, valueName: str, maxLength: int, optional: bool = False) -> str:
+    # Check if the passed value is a string
+    if not isinstance(value, str):
+        raise InputError(f"{valueName} must be a string")
+    # Check if the value is empty
+    if not value:
+        if optional:
+            return value
+        else:
+            raise InputError(f"{valueName} cannot be empty")
+    # Check if the value is too long
+    elif len(value) > maxLength:
+        raise InputError(f"{valueName} must be less than {maxLength} characters long")
+    # Check if the value is alphanumeric
+    elif not value.isalnum():
+        raise InputError(f"{valueName} must be alphanumeric")
+    return value
+
+# Determines if the passed value is a positive float, and raises an InputError if it is not
+def validatePositiveFloat(value: float, valueName: str) -> float:
+    # Check if the passed value is a float
+    if not isinstance(value, float):
+        raise InputError(f"{valueName} must be a floating point number")
+    # Check if the value is positive
+    if value <= 0:
+        raise InputError(f"{valueName} must be greater than or equal to 0")
+    return value
+    
 
 # Class PasswordService will manage the hasing, checking, and verification of passwords
 class PasswordService:

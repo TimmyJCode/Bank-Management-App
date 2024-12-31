@@ -73,19 +73,19 @@ class TestUser(unittest.TestCase):
             newUser = User("Timmons001", "P@ssw ord1", "Jack", "Timmons", "03/27/1996", "jacktimmonsemail@gmail.com", "customer")  
     # Test with invalid first name (not a string)
     def test_user_constructor_invalid_first_name_non_string(self):
-        with self.assertRaises(TypeError, msg = "Name must be a string"):
+        with self.assertRaises(ValueError, msg = "Invalid Name: Name must be a string"):
             newUser = User("Timmons001", "P@ssword1", 123, "Timmons", "03/27/1996", "jacktimmonsemail@gmail.com", "customer")  
     # Test with invalid first name (empty string)
     def test_user_constructor_invalid_first_name_empty(self):
-        with self.assertRaises(ValueError, msg = "Name cannot be empty"):
+        with self.assertRaises(ValueError, msg = "Invalid Name: Name cannot be empty"):
             newUser = User("Timmons001", "P@ssword1", "", "Timmons", "03/27/1996", "jacktimmonsemail@gmail.com", "customer")  
     # Test with invalid first name (contains spaces)
     def test_user_constructor_invalid_first_name_contains_spaces(self):
-        with self.assertRaises(ValueError, msg = "Name must contain only letters"):
+        with self.assertRaises(ValueError, msg = "Invalid Name: Name must contain only letters"):
             newUser = User("Timmons001", "P@ssword1", "Jac k", "Timmons", "03/27/1996", "jacktimmonsemail@gmail.com", "customer")  
     # Test with invalid last name (not a string)
     def test_user_constructor_invalid_last_name_non_string(self):
-        with self.assertRaises(TypeError, msg = "Name must be a string"):
+        with self.assertRaises(TypeError, msg = "Invalid Name: Name must be a string"):
             newUser = User("Timmons001", "P@ssword1", "Jack", 12345, "03/27/1996", "jacktimmonsemail@gmail.com", "customer")  
     # Test with invalid last name (empty string)
     def test_user_constructor_invalid_last_name_empty(self):

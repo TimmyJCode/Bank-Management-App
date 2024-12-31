@@ -57,19 +57,19 @@ class TestTransaction(unittest.TestCase):
         self.assertEqual(transaction.fee, 0.00)
     # Test constructor with invalid (non-float) amount
     def test_transaction_constructor_invalid_amount_non_float(self):
-        with self.assertRaises(InvalidTransactionAmountError, msg = "Amount must be a floating point number"):
+        with self.assertRaises(TransactionError, msg = "Amount must be a floating point number"):
             Transaction(self.validUserID, self.validAccountID, "100.00", self.validTransactionType)
     # Test with invalid transaction type
     def test_transaction_constructor_invalid_transaction_type(self):
-        with self.assertRaises(InvalidTransactionTypeError, msg = "Invalid transaction type"):
+        with self.assertRaises(TransactionError, msg = "Invalid transaction type"):
             Transaction(self.validUserID, self.validAccountID, self.validAmount, "Invalid")
     # Test with invalid (non-string) transaction type
     def test_transaction_constructor_invalid_transaction_type_non_string(self):
-        with self.assertRaises(InvalidTransactionTypeError, msg = "Transaction type must be a string"):
+        with self.assertRaises(TransactionError, msg = "Transaction type must be a string"):
             Transaction(self.validUserID, self.validAccountID, self.validAmount, 100.00)
     # Test with invalid (empty string) transaction type
     def test_transaction_constructor_invalid_transaction_type_empty_string(self):
-        with self.assertRaises(InvalidTransactionTypeError, msg = "Transaction type cannot be an empty string"):
+        with self.assertRaises(TransactionError, msg = "Transaction type cannot be an empty string"):
             Transaction(self.validUserID, self.validAccountID, self.validAmount, "")
     # Test with empty string for user ID
     def test_transaction_constructor_invalid_userID_empty_string(self):
@@ -110,7 +110,117 @@ class TestDeposit(TestTransaction):
         self.assertIsNone(deposit.description)
         self.assertEqual(deposit._timeStamp.date(), date.today())
         self.assertTrue(bcrypt.verify((self.validUserID + "-" + self.validTransactionType + "-" + deposit._timeStamp.isoformat()).encode(), deposit.transactionID))
+   # Test constructuor with invalid (non-string) deposit method
+    def test_deposit_constructor_invalid_deposit_method_non_string(self):
+        with self.assertRaises(DepositError, msg = "Invalid deposit method"):
+            Deposit(self.validUserID, self.validAccountID, self.validAmount, 100.00)
+    # Test constructor with invalid (empty string) deposit method
+    def test_deposit_constructor_invalid_deposit_method_empty_string(self):
+        with self.assertRaises(DepositError, msg = "Invalid deposit method"):
+            Deposit(self.validUserID, self.validAccountID, self.validAmount, "")
+    # Test constructor with invalid (non-valid) deposit method
+    def test_deposit_constructor_invalid_deposit_method_invalid(self):
+        with self.assertRaises(DepositError, msg = "Invalid deposit method"):
+            Deposit(self.validUserID, self.validAccountID, self.validAmount, "Invalid")
+
+# Test Withdrawal class
+class TestWithdrawal(TestTransaction):
+    def setUp(self):
+        super().setUp()
+        self.validWithdrawalMethod = "Cash"
+        self.validTransactionType = "Withdrawal"
+    # Test Withdrawl Constructor:
+    # Test constructor with valid values (all values supplied)
+    def test_withdrawl_constructor_valid(self):
+        withdrawal = Withdrawal(self.validUserID, self.validAccountID, self.validAmount, self.validWithdrawalMethod, self.validFee, self.validTransactionType, self.validOrigin, self.validDescription)
+        self.assertEqual(withdrawal.userID, self.validUserID)
+        self.assertEqual(withdrawal.accountID, self.validAccountID)
+        self.assertEqual(withdrawal.amount, self.validAmount)
+        self.assertEqual(withdrawal.transactionType, self.validTransactionType)
+        self.assertEqual(withdrawal.withdrawalMethod, self.validWithdrawalMethod)
+        self.assertEqual(withdrawal.fee, self.validFee)
+        self.assertEqual(withdrawal.origin, self.validOrigin)
+        self.assertEqual(withdrawal.description, self.validDescription)
+        self.assertEqual(withdrawal._timeStamp.date(), date.today())
+        self.assertTrue(bcrypt.verify((self.validUserID + "-" + self.validTransactionType + "-" + withdrawal._timeStamp.isoformat()).encode(), withdrawal.transactionID))
+    # Test constructor with valid values (no fee, origin, or description)
+    def test_withdrawl_constructor_valid_no_fee_origin_description(self):
+        withdrawal = Withdrawal(self.validUserID, self.validAccountID, self.validAmount, self.validWithdrawalMethod)
+        self.assertEqual(withdrawal.userID, self.validUserID)
+        self.assertEqual(withdrawal.accountID, self.validAccountID)
+        self.assertEqual(withdrawal.amount, self.validAmount)
+        self.assertEqual(withdrawal.transactionType, self.validTransactionType)
+        self.assertEqual(withdrawal.withdrawalMethod, self.validWithdrawalMethod)
+        self.assertEqual(withdrawal.fee, 0.00)
+        self.assertIsNone(withdrawal.origin)
+        self.assertIsNone(withdrawal.description)
+        self.assertEqual(withdrawal._timeStamp.date(), date.today())
+        self.assertTrue(bcrypt.verify((self.validUserID + "-" + self.validTransactionType + "-" + withdrawal._timeStamp.isoformat()).encode(), withdrawal.transactionID))
+    # Test constructuor with invalid (non-string) withdrawal method
+    def test_withdrawal_constructor_invalid_withdrawal_method_non_string(self):
+        with self.assertRaises(WithdrawalError, msg = "Invalid withdrawal method"):
+            Withdrawal(self.validUserID, self.validAccountID, self.validAmount, 100.00)
+    # Test constructor with invalid (empty string) withdrawal method
+    def test_withdrawal_constructor_invalid_withdrawal_method_empty_string(self):
+        with self.assertRaises(WithdrawalError, msg = "Invalid withdrawal method"):
+            Withdrawal(self.validUserID, self.validAccountID, self.validAmount, "")
+    # Test constructor with invalid (non-valid) withdrawal method
+    def test_withdrawal_constructor_invalid_withdrawal_method_invalid(self):
+        with self.assertRaises(WithdrawalError, msg = "Invalid withdrawal method"):
+            Withdrawal(self.validUserID, self.validAccountID, self.validAmount, "Invalid")
+
+# Test InternalTransfer class
+class TestInternalTransfer(TestTransaction):
+    def setUp(self):
+        super().setUp()
+        self.validTransactionType = "Intra-Transfer"
+        self.validDestinationAccountID = "Timm0002"
     
+    # Test InternalTransfer Constructor:
+    # Test constructor with valid values (all values supplied)
+    def test_internal_transfer_constructor_valid(self):
+        transfer = InternalTransfer(self.validUserID, self.validAccountID, self.validDestinationAccountID, self.validAmount, self.validTransactionType, self.validFee, self.validOrigin, self.validDescription)
+        self.assertEqual(transfer.userID, self.validUserID)
+        self.assertEqual(transfer.accountID, self.validAccountID)
+        self.assertEqual(transfer.destinationAccountID, self.validDestinationAccountID)
+        self.assertEqual(transfer.amount, self.validAmount)
+        self.assertEqual(transfer.transactionType, self.validTransactionType)
+        self.assertEqual(transfer.fee, self.validFee)
+        self.assertEqual(transfer.origin, self.validOrigin)
+        self.assertEqual(transfer.description, self.validDescription)
+        self.assertEqual(transfer._timeStamp.date(), date.today())
+        self.assertTrue(bcrypt.verify((self.validUserID + "-" + self.validTransactionType + "-" + transfer._timeStamp.isoformat()).encode(), transfer.transactionID))
+    # Test constructor with valid values (no transaction type, fee, origin, or description)
+    def test_internal_transfer_constructor_valid_no_fee_origin_description(self):
+        transfer = InternalTransfer(self.validUserID, self.validAccountID, self.validDestinationAccountID, self.validAmount)
+        self.assertEqual(transfer.userID, self.validUserID)
+        self.assertEqual(transfer.accountID, self.validAccountID)
+        self.assertEqual(transfer.destinationAccountID, self.validDestinationAccountID)
+        self.assertEqual(transfer.amount, self.validAmount)
+        self.assertEqual(transfer.transactionType, self.validTransactionType)
+        self.assertEqual(transfer.fee, 0.00)
+        self.assertIsNone(transfer.origin)
+        self.assertIsNone(transfer.description)
+        self.assertEqual(transfer._timeStamp.date(), date.today())
+        self.assertTrue(bcrypt.verify((self.validUserID + "-" + self.validTransactionType + "-" + transfer._timeStamp.isoformat()).encode(), transfer.transactionID))
+    # Test constructor with invalid (non-string) destination account ID
+    def test_internal_transfer_constructor_invalid_destination_accountID_non_string(self):
+        with self.assertRaises(TransferError, msg = "Transaction Error: Destination Account ID must be a string"):
+            InternalTransfer(self.validUserID, self.validAccountID, 100, self.validAmount)
+    # Test constructor with invalid (non-alphanumeric) destination account ID
+    def test_internal_transfer_constructor_invalid_destination_accountID_non_alphanumeric(self):
+        with self.assertRaises(TransferError, msg = "Transfer Error: Destination Account ID must be alphanumeric"):
+            InternalTransfer(self.validUserID, self.validAccountID, "Timm-0002", self.validAmount)
+    # Test constructor with invalid (empty string) destination account ID
+    def test_internal_transfer_constructor_invalid_destination_accountID_empty_string(self):
+        with self.assertRaises(TransferError, msg = "Transaction Error: Destination Account ID cannot be an empty string"):
+            InternalTransfer(self.validUserID, self.validAccountID, "", self.validAmount)
+    # Test constructor with invalid (same as source) destination account ID
+    def test_internal_transfer_constructor_invalid_destination_accountID_same_as_source(self):
+        with self.assertRaises(TransferError, msg = "Transaction Error: Destination Account ID cannot be the same as the source account ID"):
+            InternalTransfer(self.validUserID, self.validAccountID, self.validAccountID, self.validAmount)
+
+
 # Test Account class
 class TestAccount(TestTransaction):
     def setUp(self):
@@ -129,11 +239,11 @@ class TestAccount(TestTransaction):
         self.assertEqual(account.transactions, [])
     # Test constructor with invalid (non-string) account ID
     def test_account_constructor_invalid_accountID_non_string(self):
-        with self.assertRaises(InvalidAccountIDError, msg = "Account ID must be a string"):
+        with self.assertRaises(InvalidAccountIDError, msg = "Account ID Error: Account ID must be a string"):
             Account(100, self.validUserID, self.validInitialDeposit)
     # Test constructor with invalid (non-alphanumeric) account ID
     def test_account_constructor_invalid_accountID_non_alphanumeric(self):
-        with self.assertRaises(InvalidAccountIDError, msg = "Account ID must be alphanumeric"):
+        with self.assertRaises(InvalidAccountIDError, msg = "Account ID Error: Account ID must be alphanumeric"):
             Account("Timm-0001", self.validUserID, self.validInitialDeposit)
     # Test constructor with invalid (empty string) account ID 
     def test_account_constructor_invalid_accountID_empty_string(self):
@@ -141,11 +251,11 @@ class TestAccount(TestTransaction):
             Account("", self.validUserID, self.validInitialDeposit)
     # Test constructor with invalid (non-floating point) initial deposit
     def test_account_constructor_invalid_initial_deposit_non_float(self):
-        with self.assertRaises(InvalidInitialDepositError, msg = "Initial deposit must be a floating point number"):
+        with self.assertRaises(DepositError, msg = "Initial Deposit Error: Initial Deposit must be a floating point number"):
             Account(self.validAccountID, self.validUserID, "self.validInitialDeposit")
     # Test constructor with invalid (negative) initial deposit
     def test_account_constructor_invalid_initial_deposit_negative(self):
-        with self.assertRaises(InvalidInitialDepositError, msg = "Initial deposit must be greater than or equal to 0"):
+        with self.assertRaises(DepositError, msg = "Initial Deposit Error: Initial Deposit must be greater than or equal to 0"):
             Account(self.validAccountID, self.validUserID, -self.validInitialDeposit)
 
 
