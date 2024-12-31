@@ -15,6 +15,8 @@ VALID_ROLES: list[str] = ["customer", "admin"]
 VALID_STATUSES: list[str] = ["Active", "Frozen", "Closed"]
 # List of valid transaction types, for checks in the transaction type setter
 VALID_TRANSACTION_TYPES: list[str] = ["Deposit", "Withdrawal", "Intra-Transfer", "External-Transfer"]
+# List of valid deposit methods
+VALID_DEPOSIT_METHODS: list[str] = ["Cash", "Check", "Wire", "Transfer", "Direct-Deposit", "Mobile-Deposit"]
 
 # Determines if the passed role is in the list of valid roles
 def isValidRole(role: str) -> bool:
@@ -25,12 +27,12 @@ class PasswordService:
     # Hash the passed password string using bcrypt and returns a hex string
     @staticmethod
     def hashPassword(rawPassword: str) -> str:
-        return bcrypt.hash(rawPassword)
+        return bcrypt.hash(rawPassword.encode())
     
     # Check if the passed password matches the hashed password
     @staticmethod
     def checkPassword(rawPassword: str, hashedPassword: str) -> bool:
-        return bcrypt.verify(rawPassword, hashedPassword)
+        return bcrypt.verify(rawPassword.encode(), hashedPassword)
     
     # Check if the passed password is a valid password based on the following criteria:
     # - At least 8 characters long

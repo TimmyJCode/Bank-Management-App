@@ -18,22 +18,33 @@ class Transaction:
     # The constructor for the transaction class takes in the transaction ID, user ID, account ID, amount, and
     # transaction type, and initializes the transaction with the given values after validating that the transaction
     # ID is valid, the amount is a floating point number, and the transaction type is a valid type
-    def __init__(self, transactionID: str, userID: str, accountID: str, amount: float, transactionType: str):
-        self._transactionID: str = self._validateTransactionID(transactionID)
+    def __init__(self, userID: str, accountID: str, amount: float, transactionType: str, description: str = None,
+                  origin: str = None, fee: float = 0.00):
+        # Time Stamp: The date and time the transaction was made
+        self._timeStamp = datetime.now()
+        # User ID: The ID of the user that made the transaction
         self._userID: str = userID
+        # Account ID: The ID of the account that the transaction was made on
         self._accountID: str = accountID
+        # Amount: The floating point amount of the transaction
         self._amount: float = self._validateAmount(amount)
+        # Transaction Type: The type of the transaction- list of acceptable transaction types in utilities.py
         self._transactionType: str = self._validateTransactionType(transactionType)
+        # Fee: The fee charged for the transaction (default is 0.00)
+        self._fee = self._validateFee(fee)
+        # Origin: The origin of the transaction (if supplied)
+        self._origin = self._validateOrigin(origin) if origin else None
+        # Description: A description of the transaction (if supplied)
+        self._description = self._validateDescription(description) if description else None
+        # Transaction ID: A unique alphanumeric string that identifies the transaction
+        # Transaction ID format: userID-transactionType-timeStamp.isoformat()
+        # The stored transaction ID is hashed using bcrypt for security
+        self._transactionID: str = self._generateTransactionID()
 
     # Getter for the transaction ID
     @property
     def transactionID(self) -> str:
         return self._transactionID
-    
-    # Setter for the transaction ID- ensures the transaction ID is a non-empty alphanumeric string
-    @transactionID.setter
-    def transactionID(self, newTransactionID: str):
-        self._transactionID = self._validateTransactionID(newTransactionID)
     
     # Getter for the user ID
     @property
@@ -50,27 +61,51 @@ class Transaction:
     def amount(self) -> float:
         return self._amount
     
-    # Setter for the amount- ensures the amount is a floating point number
-    @amount.setter
-    def amount(self, newAmount: float):
-        self._amount = self._validateAmount(newAmount)
-    
     # Getter for the transaction type
     @property
     def transactionType(self) -> str:
         return self._transactionType
     
-    # Ensures the transaction ID is a non-empty alphanumeric string- throws an
-    # invalid transaction ID error if the transaction ID is not a string, is empty,
-    # or is not alphanumeric
-    def _validateTransactionID(self, transactionID: str) -> str:
-        if not isinstance(transactionID, str):
-            raise InvalidTransactionIDError("Transaction ID must be a string")
-        if not transactionID:
-            raise InvalidTransactionIDError("Transaction ID cannot be empty")
-        if not transactionID.isalnum():
-            raise InvalidTransactionIDError("Transaction ID must be alphanumeric")
-        return transactionID
+    # Getter for the fee
+    @property
+    def fee(self) -> float:
+        return self._fee
+    
+    # Getter for the origin
+    @property
+    def origin(self) -> str:
+        return self._origin
+    
+    # Getter for the description
+    @property
+    def description(self) -> str:
+        return self._description
+    
+    # Getter for the time stamp
+    @property
+    def timeStamp(self) -> datetime:
+        return self._timeStamp
+
+    # Validates that the userID, transactionType, and timeStamp are present in the transaction
+    # object at time of transaction ID creation- throws a transaction error if any of the metadata
+    # is missing
+    def _validateTransactionMetadata(self) -> None:
+        if not self._userID:
+            raise TransactionError("User ID is required to generate a transaction ID")
+        if not self._transactionType:
+            raise TransactionError("Transaction type is required to generate a transaction ID")
+        if not self._timeStamp:
+            raise TransactionError("Time stamp is required to generate a transaction ID")
+
+    # Generates a unique transaction ID for the transaction object- the transaction ID is a string
+    # in the format userID-transactionType-timeStamp.isoformat(), hashed using bcrpyt 
+    def _generateTransactionID(self) -> str:
+        # Validate that the transaction metadata is present
+        self._validateTransactionMetadata()
+        # Metadata string format: userID-transactionType-timeStamp.isoformat()
+        metaData: str = f"{self._userID}-{self._transactionType}-{self._timeStamp.isoformat()}"
+        # Hash the metadata string using bcrypt
+        return bcrypt.hash(metaData.encode())
 
     # Validates that the amount of the transaction is a floating point number- throws
     # a value error exception if the amount is not a float
@@ -88,12 +123,64 @@ class Transaction:
         if not transactionType:
             raise InvalidTransactionTypeError("Transaction type cannot be empty")
         if transactionType not in VALID_TRANSACTION_TYPES:
-            raise InvalidTransactionTypeError("Transaction type must be either 'Deposit' or 'Withdrawal'")
+            raise InvalidTransactionTypeError("Invalid Transaction Type")
         return transactionType
+    
+    # Ensures that the fee is a non-negative floating point number- if the fee is negative, throws a DepositError
+    def _validateFee(self, fee: float) -> float:
+        if not isinstance(fee, float):
+            raise TransactionError("Fee must be a floating point number")
+        if fee < 0:
+            raise TransactionError("Fee must be greater than or equal to 0")
+        return fee
+
+    # Ensures that the origin is a non-empty string- if the origin is empty or non alpha-numeric,
+    # throws a DepositError
+    def _validateOrigin(self, origin: str) -> str:
+        if not isinstance(origin, str) and origin is not None:
+            raise TransactionError("Origin must be a string")
+        return origin
+ 
+    # Ensures that the description is a non-empty string- if the description is empty or non alpha-numeric,
+    # throws a TransactionError
+    def _validateDescription(self, description: str) -> str:
+        if not isinstance(description, str) and description is not None:
+            raise TransactionError("Description must be a string")
+        return description
     
     # Returns a string representation of the transaction object
     def __str__(self):
-        return f"Transaction ID: {self.transactionID}\nUser ID: {self.userID}\nAccount ID: {self.accountID}\nAmount: {self.amount}\nTransaction Type: {self.transactionType}"
+        return f"Transaction ID: {self._transactionID}\nUser ID: {self._userID}\nAccount ID: {self._accountID}\nAmount: {self.amount}\nTransaction Type: {self.transactionType}"
+    
+# The deposit class is a subclass of the transaction class, and is used to represent a deposit transaction
+# in the bank management system
+# Each deposit has a transaction ID, the user ID of the user that made the deposit, the account ID of the account
+# that the deposit was made on, the amount of the deposit, the type of transaction (deposit), and the date and time of the deposit
+class Deposit(Transaction):
+    # The constructor for the deposit class takes in the user ID, account ID, and amount of the deposit, and initializes
+    # the deposit with the given values after validating that the amount is a valid floating point number
+    def __init__(self, userID: str, accountID: str, amount: float, depositMethod: str, fee: float = 0.00,
+                 transactionType: str = "Deposit", origin: str = None, description: str = None):
+        # Call the Transaction class constructor
+        super().__init__(userID, accountID, amount, transactionType, description, origin, fee)
+        # Deposit Method: The method used to make the deposit
+        self._depositMethod: str = self._validateDepositMethod(depositMethod)
+        
+    # Getter for the deposit method
+    @property
+    def depositMethod(self) -> str:
+        return self._depositMethod
+    
+    # Ensures that the deposit method is a valid deposit method as defined in the utilities.py file
+    # If deposit method is invalid, throws DepositError exception
+    def _validateDepositMethod(self, depositMethod: str) -> str:
+        if depositMethod not in VALID_DEPOSIT_METHODS:
+            raise DepositError("Invalid deposit method")
+        return depositMethod
+    
+    
+   
+
 
 # The account class is the base class for the checking, savings, credit, and investment account classes
 # Each account has an account ID, the user ID of the user that owns the account, the balance of the account,
@@ -146,18 +233,12 @@ class Account:
     def status(self) -> str:
         return self._status
     
-    # Setter for the status- ensures the status is a non-empty string and is a valid account status
+    # Setter for the status- ensures the status is a valid account status
     @status.setter
     def status(self, newStatus: str):
-        # Verify status is a string
-        if not isinstance(newStatus, str):
-            raise TypeError("Status must be a string")
-        # Verify status is not empty
-        if not newStatus:
-            raise ValueError("Status cannot be empty")
         # Verify status is within the list of valid statuses
         if newStatus not in VALID_STATUSES:
-            raise ValueError("Status must be either 'Active' or 'Closed'")
+            raise ValueError("Status must be 'Active', 'Frozen', or 'Closed'")
         self._status = newStatus
     
     # Validates that the account ID is a non empty string

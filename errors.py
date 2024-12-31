@@ -9,7 +9,6 @@ class InvalidPasswordError(ValueError):
     def __init__(self, message: str):
         super().__init__(message)
 
-
 class InvalidDOBError(ValueError):
     def __init__(self, message: str):
         super().__init__(message)
@@ -22,6 +21,10 @@ class InvalidInitialDepositError(ValueError):
     def __init__(self, message: str):
         super().__init__(message)
 
+class InvalidUserIDError(ValueError):
+    def __init__(self, message: str):
+        super().__init__(message)
+
 class InvalidTransactionIDError(ValueError):
     def __init__(self, message: str):
         super().__init__(message)
@@ -31,5 +34,13 @@ class InvalidTransactionAmountError(ValueError):
         super().__init__(message)
 
 class InvalidTransactionTypeError(ValueError):
+    def __init__(self, message: str):
+        super().__init__(message)
+
+class TransactionError(ValueError):
+    def __init__(self, message: str):
+        super().__init__(message)
+
+class DepositError(ValueError):
     def __init__(self, message: str):
         super().__init__(message)
